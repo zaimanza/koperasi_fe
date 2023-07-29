@@ -8,7 +8,6 @@ import 'package:test_object/components/elevated_text_field_side_text.dart';
 import 'package:test_object/modules/parcel_module.dart';
 
 import '../providers/internet_connectivity_provider.dart';
-import '../providers/store_provider.dart';
 
 class ParcelOutPage extends ConsumerStatefulWidget {
   const ParcelOutPage({Key? key}) : super(key: key);
@@ -229,16 +228,19 @@ class _ParcelOutPageState extends ConsumerState<ParcelOutPage> {
                         });
                         FocusManager.instance.primaryFocus?.unfocus();
                         FocusScope.of(context).unfocus();
+
                         if (trackingNumberController.text.isNotEmpty) {
                           findOneResult = await findOneParcel(
                             trackingNumberController.text,
                           );
-                          print(findOneResult.isEmpty);
+
                           if (findOneResult.isNotEmpty) {
+                            print("HI_AIMAN_1");
+                            print(findOneResult);
                             courierController.text =
                                 findOneResult["courier"] ?? "";
                             trackingNumberResultController.text =
-                                findOneResult["tracking_number"] ?? "";
+                                findOneResult["parcelId"] ?? "";
                             phoneNumberController.text =
                                 findOneResult["phone_number"] ?? "";
                             remarksController.text =
@@ -390,71 +392,58 @@ class _ParcelOutPageState extends ConsumerState<ParcelOutPage> {
                         FocusManager.instance.primaryFocus?.unfocus();
                         FocusScope.of(context).unfocus();
 
-                        if (ref.read(storeProvider).storeName != "") {
-                          dynamic response;
+                        dynamic response;
 
-                          if (recipientController.text != "") {
-                            if (pickedOutDateController.text == "") {
-                              var newPhoneNumber =
-                                  recipientPhoneNumberController.text;
-                              if (newPhoneNumber.startsWith("0")) {
-                                newPhoneNumber = "6" + newPhoneNumber;
+                        if (recipientController.text != "") {
+                          if (pickedOutDateController.text == "") {
+                            var newPhoneNumber =
+                                recipientPhoneNumberController.text;
+                            if (newPhoneNumber.startsWith("0")) {
+                              newPhoneNumber = "6" + newPhoneNumber;
+                            }
+                            newPhoneNumber = newPhoneNumber.replaceAll(" ", "");
+                            newPhoneNumber = newPhoneNumber.replaceAll("-", "");
+
+                            response = await updateOneParcel({
+                              "parcelId": trackingNumberResultController.text,
+                              "picked_out_at": DateTime.now().toIso8601String(),
+                              "recipient_name": recipientController.text,
+                              "recipient_phone_number": newPhoneNumber,
+                            });
+
+                            if (recipientController.text != "" ||
+                                pickedOutDateController.text == "") {
+                              if (isHoldRecipient == false) {
+                                recipientController.text = "";
+                                recipientPhoneNumberController.text = "";
                               }
-                              newPhoneNumber =
-                                  newPhoneNumber.replaceAll(" ", "");
-                              newPhoneNumber =
-                                  newPhoneNumber.replaceAll("-", "");
-
-                              response = await updateOneParcel({
-                                "tracking_number":
-                                    trackingNumberResultController.text,
-                                "picked_out_at":
-                                    DateTime.now().toIso8601String(),
-                                "recipient_name": recipientController.text,
-                                "recipient_phone_number": newPhoneNumber,
-                              });
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                      'Cannot be updated because have been picked out.'),
-                                ),
-                              );
+                              //clear tracking number
+                              trackingNumberController.text = "";
+                              //clear data bawah and tukar kpd false for view
+                              isCanViewResult = false;
+                              courierController.text = "";
+                              trackingNumberResultController.text = "";
+                              phoneNumberController.text = "";
+                              remarksController.text = "";
+                              createdDateController.text = "";
+                              pickedOutDateController.text = "";
                             }
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Recipient name must be filled.'),
+                                content: Text(
+                                    'Cannot be updated because have been picked out.'),
                               ),
                             );
-                          }
-
-                          //if receipient tk save emptykan dia
-
-                          if (recipientController.text != "" ||
-                              pickedOutDateController.text == "") {
-                            if (isHoldRecipient == false) {
-                              recipientController.text = "";
-                              recipientPhoneNumberController.text = "";
-                            }
-                            //clear tracking number
-                            trackingNumberController.text = "";
-                            //clear data bawah and tukar kpd false for view
-                            isCanViewResult = false;
-                            courierController.text = "";
-                            trackingNumberResultController.text = "";
-                            phoneNumberController.text = "";
-                            remarksController.text = "";
-                            createdDateController.text = "";
-                            pickedOutDateController.text = "";
                           }
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Please setup store name.'),
+                              content: Text('Recipient name must be filled.'),
                             ),
                           );
                         }
+
                         setState(() {
                           isShowCircleIndicator = false;
                         });

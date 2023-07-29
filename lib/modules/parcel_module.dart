@@ -1,16 +1,15 @@
 import '../middleware/fetch_api.dart';
 
-addParcel(courier, trackingNumber, phoneNumber, remarks, storeName) async {
+addParcel(courier, parcelId, phoneNumber, remarks) async {
   Map<String, dynamic> data = {};
   if (courier.toString().isNotEmpty) data['courier'] = courier;
-  if (trackingNumber.toString().isNotEmpty) {
-    data['tracking_number'] = trackingNumber;
+  if (parcelId.toString().isNotEmpty) {
+    data['parcelId'] = parcelId;
   }
   if (phoneNumber.toString().isNotEmpty) data['phone_number'] = phoneNumber;
   if (remarks.toString().isNotEmpty) data['remarks'] = remarks;
-  if (remarks.toString().isNotEmpty) data['branch'] = storeName;
   data['created_at'] = DateTime.now().toIso8601String();
-  var findOneResult = await FetchAPI().getOneParcel(trackingNumber);
+  var findOneResult = await FetchAPI().getOneParcel(parcelId);
   if (findOneResult != null) {
     return false;
   }
@@ -21,14 +20,16 @@ addParcel(courier, trackingNumber, phoneNumber, remarks, storeName) async {
   return response;
 }
 
-findOneParcel(trackingNumber) async {
-  var response = await FetchAPI().getOneParcel(trackingNumber);
+findOneParcel(parcelId) async {
+  var response = await FetchAPI().getOneParcel(parcelId);
 
   return response ?? {};
 }
 
 updateOneParcel(variable) async {
-  var result = await FetchAPI().getOneParcel(variable["tracking_number"]);
+  print("HI_MANZA_2");
+  print(variable["parcelId"]);
+  var result = await FetchAPI().getOneParcel(variable["parcelId"]);
 
   if ((variable["picked_out_at"] ?? "") != "") {
     result!['picked_out_at'] = variable["picked_out_at"];
@@ -45,12 +46,7 @@ updateOneParcel(variable) async {
   if ((variable["remarks"] ?? "") != "") {
     result!['remarks'] = variable["remarks"];
   }
+  print(result);
   var response = await FetchAPI().updateOneParcel(variable);
   return result;
-}
-
-getTokenLeft() async {
-  var tokenLeft = await FetchAPI().getNoOfTokenLeft();
-
-  return tokenLeft.toString();
 }

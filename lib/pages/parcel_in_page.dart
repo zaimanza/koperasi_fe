@@ -149,122 +149,113 @@ class _ParcelInPageState extends ConsumerState<ParcelInPage> {
   }
 
   onTapSaveSendWhatsapp() async {
-    if (ref.read(storeProvider).storeName != "") {
-      if (ref.read(internetConnectivityProvider).connectionStatus == true) {
+    if (ref.read(internetConnectivityProvider).connectionStatus == true) {
+      setState(() {
+        isShowCircleIndicator = true;
+      });
+      FocusManager.instance.primaryFocus?.unfocus();
+      FocusScope.of(context).unfocus();
+      var isPhoneNumberValid = false;
+      if (courierController.text.isEmpty) {
         setState(() {
-          isShowCircleIndicator = true;
+          isCourierEmpty = true;
         });
-        FocusManager.instance.primaryFocus?.unfocus();
-        FocusScope.of(context).unfocus();
-        var isPhoneNumberValid = false;
-        if (courierController.text.isEmpty) {
+      }
+      if (trackingNumberController.text.isEmpty) {
+        setState(() {
+          isTrackingNumberEmpty = true;
+        });
+      }
+      if (phoneNumberController.text.isEmpty) {
+        setState(() {
+          isPhoneNumberEmpty = true;
+        });
+      } else {
+        isPhoneNumberValid =
+            await regexPhoneNumber(phoneNumberController.text, "MY");
+        if (isPhoneNumberValid == false) {
           setState(() {
-            isCourierEmpty = true;
+            isPhoneNumberErr = true;
           });
         }
-        if (trackingNumberController.text.isEmpty) {
-          setState(() {
-            isTrackingNumberEmpty = true;
-          });
+      }
+      if (courierController.text.isNotEmpty &&
+          trackingNumberController.text.isNotEmpty &&
+          phoneNumberController.text.isNotEmpty &&
+          isPhoneNumberValid) {
+        var newPhoneNumber = phoneNumberController.text;
+        if (newPhoneNumber.startsWith("0")) {
+          newPhoneNumber = "6" + newPhoneNumber;
         }
-        if (phoneNumberController.text.isEmpty) {
-          setState(() {
-            isPhoneNumberEmpty = true;
-          });
-        } else {
-          isPhoneNumberValid =
-              await regexPhoneNumber(phoneNumberController.text, "MY");
-          if (isPhoneNumberValid == false) {
-            setState(() {
-              isPhoneNumberErr = true;
-            });
-          }
-        }
-        if (courierController.text.isNotEmpty &&
-            trackingNumberController.text.isNotEmpty &&
-            phoneNumberController.text.isNotEmpty &&
-            isPhoneNumberValid) {
-          var newPhoneNumber = phoneNumberController.text;
-          if (newPhoneNumber.startsWith("0")) {
-            newPhoneNumber = "6" + newPhoneNumber;
-          }
-          newPhoneNumber = newPhoneNumber.replaceAll(" ", "");
-          newPhoneNumber = newPhoneNumber.replaceAll("-", "");
-          //fing parcel
-          var findOneResult = await findOneParcel(
+        newPhoneNumber = newPhoneNumber.replaceAll(" ", "");
+        newPhoneNumber = newPhoneNumber.replaceAll("-", "");
+        //fing parcel
+        var findOneResult = await findOneParcel(
+          trackingNumberController.text,
+        );
+
+        if (findOneResult.isEmpty) {
+          //TODO: filter from mongo if value has exceed amount
+
+          var isAdd = await addParcel(
+            courierController.text,
             trackingNumberController.text,
+            newPhoneNumber,
+            remarksController.text,
           );
-
-          if (findOneResult.isEmpty) {
-            //TODO: filter from mongo if value has exceed amount
-
-            var isAdd = await addParcel(
-              courierController.text,
-              trackingNumberController.text,
-              newPhoneNumber,
-              remarksController.text,
-              ref.read(storeProvider).storeName,
-            );
-            if (isAdd == true) {
-              if (isHoldCourier == false) {
-                courierController.text = "";
-              }
-              trackingNumberController.text = "";
-              phoneNumberController.text = "";
-              remarksController.text = "";
-            } else if (isAdd?.isNotEmpty && isAdd.runtimeType == String) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(isAdd),
-                ),
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text("Tracking number already exists."),
-                ),
-              );
+          if (isAdd == true) {
+            if (isHoldCourier == false) {
+              courierController.text = "";
             }
-          } else {
+            trackingNumberController.text = "";
+            phoneNumberController.text = "";
+            remarksController.text = "";
+          } else if (isAdd?.isNotEmpty && isAdd.runtimeType == String) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: const Text(
-                  "Tracking number already exists.",
-                ),
-                action: SnackBarAction(
-                  label: 'Update',
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation1, animation2) =>
-                            ParcelUpdatePage(
-                          findOneResult: findOneResult,
-                        ),
-                        transitionDuration: Duration.zero,
-                        reverseTransitionDuration: Duration.zero,
-                      ),
-                    );
-                  },
-                ),
+                content: Text(isAdd),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text("Tracking number already exists."),
               ),
             );
           }
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                "Tracking number already exists.",
+              ),
+              action: SnackBarAction(
+                label: 'Update',
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation1, animation2) =>
+                          ParcelUpdatePage(
+                        findOneResult: findOneResult,
+                      ),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                  );
+                },
+              ),
+            ),
+          );
         }
-        setState(() {
-          isShowCircleIndicator = false;
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("No internet connection."),
-          ),
-        );
       }
+      setState(() {
+        isShowCircleIndicator = false;
+      });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please setup store name.'),
+          content: Text("No internet connection."),
         ),
       );
     }
@@ -438,7 +429,7 @@ class _ParcelInPageState extends ConsumerState<ParcelInPage> {
                   CenterButton(
                     backgroundColor: Colors.green,
                     onTap: onTapSaveSendWhatsapp,
-                    title: 'Save and send whatsapp',
+                    title: 'Add Parcel',
                   )
                 ],
               ),
