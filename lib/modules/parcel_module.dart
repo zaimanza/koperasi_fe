@@ -27,8 +27,6 @@ findOneParcel(parcelId) async {
 }
 
 updateOneParcel(variable) async {
-  print("HI_MANZA_2");
-  print(variable["parcelId"]);
   var result = await FetchAPI().getOneParcel(variable["parcelId"]);
 
   if ((variable["picked_out_at"] ?? "") != "") {
@@ -46,7 +44,7 @@ updateOneParcel(variable) async {
   if ((variable["remarks"] ?? "") != "") {
     result!['remarks'] = variable["remarks"];
   }
-  print(result);
+
   var response = await FetchAPI().updateOneParcel(variable);
   return result;
 }

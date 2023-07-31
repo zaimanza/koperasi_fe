@@ -1,15 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../components/center_button.dart';
 import '../components/elevated_text_field_side_text.dart';
-import '../middleware/change_to_url.dart';
 import '../modules/parcel_module.dart';
 import '../providers/internet_connectivity_provider.dart';
-import '../providers/store_provider.dart';
 
 class ParcelUpdatePage extends ConsumerStatefulWidget {
   const ParcelUpdatePage({
@@ -67,109 +62,21 @@ class _ParcelUpdatePageState extends ConsumerState<ParcelUpdatePage> {
   bool isShowCircleIndicator = false;
 
   setData() {
-    print(widget.findOneResult);
-    recipientController.text = widget.findOneResult["recipient_name"] ?? "";
+    recipientController.text =
+        widget.findOneResult["recipient_name"].toString() ?? "";
     recipientPhoneNumberController.text =
-        widget.findOneResult["recipient_phone_number"] ?? "";
-    trackingNumberController.text =
-        widget.findOneResult["tracking_number"] ?? "";
+        widget.findOneResult["recipient_phone_number"].toString() == 0
+            ? ""
+            : widget.findOneResult["recipient_phone_number"].toString() ?? "";
+    trackingNumberController.text = widget.findOneResult["parcelId"] ?? "";
     courierController.text = widget.findOneResult["courier"] ?? "";
     trackingNumberResultController.text =
-        widget.findOneResult["tracking_number"] ?? "";
+        widget.findOneResult["parcelId"] ?? "";
     phoneNumberController.text = widget.findOneResult["phone_number"] ?? "";
     remarksController.text = widget.findOneResult["remarks"] ?? "";
+
     createdDateController.text = widget.findOneResult["created_at"] ?? "";
     pickedOutDateController.text = widget.findOneResult["picked_out_at"] ?? "";
-  }
-
-  getAdvertisement() {
-    if (ref.read(storeProvider).advertisement != "") {
-      return "\n\nIKLAN: " + "\n" + ref.read(storeProvider).advertisement;
-    }
-    return "";
-  }
-
-  getNotification() {
-    if (ref.read(storeProvider).notification != "") {
-      return "\n\nPEMBERITAHUAN: " +
-          "\n" +
-          ref.read(storeProvider).notification;
-    }
-    return "";
-  }
-
-  getOperationHour() {
-    if (ref.read(storeProvider).operationHour != "") {
-      return "\n\nWAKTU OPERASI: " +
-          "\n" +
-          ref.read(storeProvider).operationHour;
-    }
-    return "";
-  }
-
-  getRemarks() {
-    if (remarksController.text.isNotEmpty) {
-      return "\n\nREMARKS: " + remarksController.text;
-    }
-    return "";
-  }
-
-  sendWhatsapp() async {
-    var message = changeToUrl(
-      "ASSALAMULAIKUM DAN SALAM SEJAHTERA DARI: " +
-          ref.read(storeProvider).storeName +
-          getNotification() +
-          getAdvertisement() +
-          "\n\n" +
-          "TRACKING PARCEL ANDA: " +
-          trackingNumberController.text +
-          "\n\n" +
-          "COURIER: " +
-          courierController.text +
-          "\n\n" +
-          "SILA BUKA PAUTAN UNTUK KOD QR TRACKING ANDA. PAUTAN: " +
-          "\n" +
-          "https://chart.apis.google.com/chart?cht=qr&chs=300x300&chl=" +
-          changeToUrl(trackingNumberController.text) +
-          "&chld=H|2" +
-          getRemarks() +
-          "\n\n" +
-          "CAJ ANDA: RM2.00" +
-          getOperationHour() +
-          "\n\n" +
-          "TERIMA KASIH",
-    );
-
-    var whatsapp = phoneNumberController.text;
-    if (whatsapp.startsWith("0")) {
-      whatsapp = "+6" + whatsapp;
-    }
-    whatsapp = whatsapp.replaceAll(" ", "");
-    whatsapp = whatsapp.replaceAll("-", "");
-    var whatsappURLAndroid =
-        "whatsapp://send?phone=" + whatsapp + "&text=$message";
-    var whatsappURLIos = "https://wa.me/$whatsapp?text=${Uri.parse(message)}";
-    if (Platform.isIOS) {
-      if (await canLaunch(whatsappURLIos)) {
-        await launch(whatsappURLIos);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Whatsapp no installed"),
-          ),
-        );
-      }
-    } else {
-      if (await canLaunch(whatsappURLAndroid)) {
-        await launch(whatsappURLAndroid);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Whatsapp no installed"),
-          ),
-        );
-      }
-    }
   }
 
   @override
@@ -281,18 +188,6 @@ class _ParcelUpdatePageState extends ConsumerState<ParcelUpdatePage> {
                   const SizedBox(
                     height: 30,
                   ),
-                  ElevatedTextFieldSideText(
-                    hintText: 'Remarks',
-                    onChanged: () {
-                      setState(() {
-                        isRemarksEmpty = false;
-                        isRemarksErr = false;
-                      });
-                    },
-                    controller: remarksController,
-                    enabled: true,
-                    titleText: 'Remarks',
-                  ),
                   const SizedBox(
                     height: 30,
                   ),
@@ -339,7 +234,7 @@ class _ParcelUpdatePageState extends ConsumerState<ParcelUpdatePage> {
                         isShowCircleIndicator = true;
                       });
                       var response = await updateOneParcel({
-                        "tracking_number": trackingNumberController.text,
+                        "parcelId": trackingNumberController.text,
                         "phone_number": newPhoneNumber,
                         "remarks": remarksController.text,
                       });
@@ -362,10 +257,9 @@ class _ParcelUpdatePageState extends ConsumerState<ParcelUpdatePage> {
                     CenterButton(
                       backgroundColor: Colors.green,
                       onTap: () async {
-                        sendWhatsapp();
                         Navigator.pop(context);
                       },
-                      title: "Send whatsapp",
+                      title: "Back to home",
                     ),
                   ],
                 ],
