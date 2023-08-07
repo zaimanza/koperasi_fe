@@ -171,8 +171,7 @@ class _ParcelInPageState extends ConsumerState<ParcelInPage> {
           isPhoneNumberEmpty = true;
         });
       } else {
-        isPhoneNumberValid =
-            await regexPhoneNumber(phoneNumberController.text, "MY");
+        isPhoneNumberValid = true;
         if (isPhoneNumberValid == false) {
           setState(() {
             isPhoneNumberErr = true;
